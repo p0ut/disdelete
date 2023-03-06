@@ -1,8 +1,8 @@
 # disdelete
 A lightning fast Discord message deletion tool for any channel or DM.
 
-⚠️ *Please be aware that user account automation may result in account termination.*
-*For more information, have a look [here](https://support.discord.com/hc/en-us/articles/115002192352-Automated-user-accounts-self-bots-).*
+>⚠️ *Please be aware that user account automation may result in account termination.*
+>*For more information, have a look [here](https://support.discord.com/hc/en-us/articles/115002192352-Automated-user-accounts-self-bots-).*
 
 ![disdelete_running](https://i.imgur.com/OZPIYFb.gif)
 
