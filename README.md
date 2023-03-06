@@ -9,7 +9,11 @@ A lightning fast Discord message deletion tool for any channel or DM.
 disdelete is a modern request-based Discord message delete script. 
 It is specifically designed to delete messages quickly and efficiently.
 
-This is 
+This **does not** use any Discord library. Simple websockets and full fledged raw requests.
+
+## Requirements
+
+Please make sure nodejs is installed and please use the `git clone` command or just download manually.
 
 ## Install
 
