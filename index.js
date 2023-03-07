@@ -44,7 +44,10 @@ discord.on('message', function incoming(data) {
 			const { heartbeat_interval } = d;
 			interval = heartbeat(heartbeat_interval)
 			break;
-
+		case 1:
+			/* handle a requested heartbeat */
+			discord.send(JSON.stringify({op:1, d: null}))
+			break;
 	}
 
 	switch(t) {
@@ -101,9 +104,8 @@ function msgFetch(channel_id) {
 	}).then(res => Promise.all([res.status, res.json()])).then(async ([status, jsonMessages]) => {
 		//console.log(jsonMessages)
 		console.log(`Fetching \x1b[94mDiscord \x1b[97mmessages...\x1b[0m`)
+		fetchVal = ''
 		for (let i = 0; i < jsonMessages.length; i++) {
-			/* loop fetch on last index, then reset */
-			fetchVal = ''
 
 			if (i == jsonMessages.length - 1) {
 				fetchVal = `before=${jsonMessages[i].id}&`
@@ -119,5 +121,6 @@ function msgFetch(channel_id) {
 				}
 			}
 		}
+		jsonMessages.length = 0
 	});
 }
