@@ -115,7 +115,7 @@ function msgFetch(channel_id) {
 		
 		for (let i = 0; i < jsonMessages.length; i++) {
 
-			if (i == jsonMessages.length - 1 && jsonMessages.length != 0) {
+			if (i == jsonMessages.length - 1) {
 				fetchVal = `before=${jsonMessages[i].id}&`
 				msgFetch(channel_id)
 			}
