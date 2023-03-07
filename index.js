@@ -7,6 +7,8 @@ let suffix = '.'
 const discord = new discord_ws('wss://gateway.discord.gg/?v=8&encoding=json')
 
 let interval = 0
+let seq_num = 0
+
 let fetchVal = ''
 let user = []
 
@@ -40,13 +42,18 @@ discord.on('message', function incoming(data) {
 	const {t, event, op, d} = payload;
 
 	switch(op) {
-		case 10:
-			const { heartbeat_interval } = d;
-			interval = heartbeat(heartbeat_interval)
+		case 0:
+			/* change sequence number dependent on the
+			   number of events */
+			seq_num = payload.s
 			break;
 		case 1:
 			/* handle a requested heartbeat */
-			discord.send(JSON.stringify({op:1, d: null}))
+			discord.send(JSON.stringify({op:1, d: seq_num}))
+			break;
+		case 10:
+			const { heartbeat_interval } = d;
+			interval = heartbeat(heartbeat_interval)
 			break;
 	}
 
@@ -74,7 +81,7 @@ discord.on('message', function incoming(data) {
 
 const heartbeat = (ms) => {
 	return setInterval(() => {
-		discord.send(JSON.stringify({op:1, d: null}))
+		discord.send(JSON.stringify({op:1, d: seq_num}))
 		//console.log('heartbeat sent here.')
 	}, ms)
 }
@@ -102,9 +109,10 @@ function msgFetch(channel_id) {
 	  "mode": "cors",
 	  "credentials": "include"
 	}).then(res => Promise.all([res.status, res.json()])).then(async ([status, jsonMessages]) => {
-		//console.log(jsonMessages)
+
 		console.log(`Fetching \x1b[94mDiscord \x1b[97mmessages...\x1b[0m`)
 		fetchVal = ''
+		
 		for (let i = 0; i < jsonMessages.length; i++) {
 
 			if (i == jsonMessages.length - 1) {
