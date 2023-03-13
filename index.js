@@ -1,24 +1,21 @@
 const discord_ws = require('ws');
-const msg = require('./src/discord_api/delete.js')
+const msg = require('./src/discord_api/delete.js');
 
-// the suffix of your command eg '.d'
+/* configuration */
+authentication_token = ''
 let suffix = '.'
 
-const discord = new discord_ws('wss://gateway.discord.gg/?v=8&encoding=json')
+/* dynamic variables */
+let session_id_value;
+let resume_gateway;
 
 let interval = 0
-let seq_num = 0
-
+let seq_num = null
 let fetchVal = ''
+
 let user = []
 
-/* fetch has a tendency to throw warnings with certain header conditions*/
-process.removeAllListeners('warning')
-
-/* put your authentication token here ! */
-authentication_token = ''
-
-payload = {
+const identify_payload = {
 	op:2,
 	d: {
 		token: authentication_token,
@@ -31,59 +28,85 @@ payload = {
 	}
 }
 
-discord.on('open', function open() {
-	discord.send(JSON.stringify(payload))
-})
+function discord_connect(connection_type, gateway) {
 
-discord.on('message', function incoming(data) {
-	let payload = JSON.parse(data)
+	let discord = new discord_ws(gateway + "/?v=9&encoding=json")
+
+	discord.on('open', function open() {
+
+		if (connection_type == 'start') {
+			discord.send(JSON.stringify(identify_payload))
+		} else {
+			let opcode_6 = JSON.stringify({op: 6, d: {token: authentication_token, session_id: session_id_value, seq: seq_num}})
+			discord.send(opcode_6)
+		}
+	})
+
+	discord.on('message', function incoming(data) {
+		
+		let payload = JSON.parse(data)
+		const {t, event, op, d} = payload;
 	
-	//console.log(payload)
-	const {t, event, op, d} = payload;
+		switch(op) {
+			case 0:
+				/* change sequence number dependent on the
+				   number of events */
+				seq_num = payload.s
+				break;
+			case 1:
+				/* handle a requested heartbeat */
+				discord.send(JSON.stringify({op:1, d: seq_num}))
+				break;
+			case 7:
+				/* attempt to resume the connection */
+				discord.close();
+				discord_connect('resume', resume_gateway)
+				break;
+			case 10:
+				const { heartbeat_interval } = d;
+				interval = heartbeat(heartbeat_interval)
+				break;
+			case 11:
+				/* heartbeat acknowledgement */
+				break;
+//			default:
+//				console.log(payload)
+//				process.exit(0)
+		}
+	
+		switch(t) {
+			case 'READY':
+				user.push(payload.d.user.id)
+				session_id_value = payload.d.session_id
+				resume_gateway = payload.d.resume_gateway_url
+				break;
+			case 'MESSAGE_CREATE':
+	
+				let me = user[0]
+				let content = payload.d.content
+				let author = payload.d.author.id
+				let channel = payload.d.channel_id
+	
+				//console.log(content)
+	
+				if (content == `${suffix}d` && author == me) {
+					message_count = 0
+					msgFetch(channel)
+				}
+				break;
+//			case 'RESUMED':
+//				console.log(payload)
+//				process.exit(0)
+//				break;
+		}
+	})
 
-	switch(op) {
-		case 0:
-			/* change sequence number dependent on the
-			   number of events */
-			seq_num = payload.s
-			break;
-		case 1:
-			/* handle a requested heartbeat */
+	const heartbeat = (ms) => {
+		return setInterval(() => {
 			discord.send(JSON.stringify({op:1, d: seq_num}))
-			break;
-		case 10:
-			const { heartbeat_interval } = d;
-			interval = heartbeat(heartbeat_interval)
-			break;
+			//console.log('heartbeat sent here.')
+		}, ms)
 	}
-
-	switch(t) {
-		case 'READY':
-			user.push(payload.d.user.id)
-			break;
-		case 'MESSAGE_CREATE':
-
-			let me = user[0]
-			let content = payload.d.content
-			let author = payload.d.author.id
-			let channel = payload.d.channel_id
-
-			//console.log(content)
-
-			if (content == `${suffix}d` && author == me) {
-				message_count = 0
-				msgFetch(channel)
-			}
-			break;
-
-	}
-})
-
-const heartbeat = (ms) => {
-	return setInterval(() => {
-		discord.send(JSON.stringify({op:1, d: seq_num}))
-		//console.log('heartbeat sent here.')
-	}, ms)
 }
 
 function msgFetch(channel_id) {
@@ -132,3 +155,5 @@ function msgFetch(channel_id) {
 		jsonMessages.length = 0
 	});
 }
+
+discord_connect('start', 'wss://gateway.discord.gg')
