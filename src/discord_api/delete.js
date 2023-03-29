@@ -32,7 +32,7 @@ module.exports = {
 		if (json) {
 	
 			/* exclude all discord system messages.. */
-			if (json.message == "Cannot execute action on a system message") {
+			if (json.message == "Cannot execute action on a system message" || json.message == "Unknown Message") {
 				return 'true'
 			}
 	
