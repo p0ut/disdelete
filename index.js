@@ -62,6 +62,11 @@ function discord_connect(connection_type, gateway) {
 				discord.close();
 				discord_connect('resume', resume_gateway)
 				break;
+			case 9:
+				/* disconnection through session timeout */
+				discord.close(4009);
+				discord_connect('start', 'wss://gateway.discord.gg')
+				break;
 			case 10:
 				const { heartbeat_interval } = d;
 				interval = heartbeat(heartbeat_interval)
